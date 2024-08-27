@@ -1,0 +1,63 @@
+from pandas_datareader import data, wb
+import pandas as pd
+import numpy as np
+import datetime
+%matplotlib inline
+
+start = datetime.datetime(2006, 1, 1)
+end = datetime.datetime(2016, 1, 1)
+
+#data: used a latest working api 
+# Bank of America
+BAC = data.DataReader("BAC", 'google', start, end)
+
+# CitiGroup
+C = data.DataReader("C", 'google', start, end)
+
+# Goldman Sachs
+GS = data.DataReader("GS", 'google', start, end)
+
+# JPMorgan Chase
+JPM = data.DataReader("JPM", 'google', start, end)
+
+# Morgan Stanley
+MS = data.DataReader("MS", 'google', start, end)
+
+# Wells Fargo
+WFC = data.DataReader("WFC", 'google', start, end)
+
+
+df = data.DataReader(['BAC', 'C', 'GS', 'JPM', 'MS', 'WFC'],'google', start, end)
+
+#creating tricker symbols
+tickers = ['BAC', 'C', 'GS', 'JPM', 'MS', 'WFC']
+
+bank_stocks = pd.concat([BAC, C, GS, JPM, MS, WFC],axis=1,keys=tickers)
+
+bank_stocks.xs(key='Close',axis=1,level='Stock Info').max()
+
+# creating a new data frame to store all the results of the stocks 
+returns = pd.DataFrame()
+
+# using pandas pct_change() method on the Close column to create a column representing this return value
+for tick in tickers:
+    returns[tick+' Return'] = bank_stocks[tick]['Close'].pct_change()
+returns.head()
+
+#creating a pairplot to view the data obtained
+import seaborn as sns
+sns.pairplot(returns[1:])
+
+#ploting a figure for the same data 
+for tick in tickers:
+    bank_stocks[tick]['Close'].plot(figsize=(12,4),label=tick)
+plt.legend()
+
+#creating a moving average in the year 2008 to 2009 
+plt.figure(figsize=(12,6))
+BAC['Close'].ix['2008-01-01':'2009-01-01'].rolling(window=30).mean().plot(label='30 Day Avg')
+BAC['Close'].ix['2008-01-01':'2009-01-01'].plot(label='BAC CLOSE')
+plt.legend()
+
+# creating a heatmap for the updated data
+sns.heatmap(bank_stocks.xs(key='Close',axis=1,level='Stock Info').corr(),annot=True)
